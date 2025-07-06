@@ -76,7 +76,7 @@ class HostList:
 
         for host in self.hosts:
             ping_res = ping(host[1])
-            res.append(host + [['Offline'], ['Online']][ping_res])
+            res.append(host + [ping_res])
         return res
 
 
@@ -131,11 +131,16 @@ class TableFromList(QWidget):
         self.tableWidget.setColumnCount(num_cols)
         self.tableWidget.setHorizontalHeaderLabels(self.headers)
 
+        geometry = self.geometry().getCoords()
+
+        self.setGeometry(geometry[0], geometry[1], 350, 100 + 30 * len(self.data))
+
         for row_idx, row_data in enumerate(self.data):
             for col_idx, item_data in enumerate(row_data):
                 item = QTableWidgetItem(str(item_data))
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                if 'Offline' == row_data[-1]:
+
+                if row_data[-1]:
                     item.setBackground(QColor(100, 0, 0))
                 else:
                     item.setBackground(QColor(0, 100, 0))
@@ -156,6 +161,9 @@ class TableFromList(QWidget):
     def delete_row(self, row):
         self.tableWidget.removeRow(row)
         host_list.del_host(row)
+
+        del self.data[row]
+        self.populate_table()
 
 
 if __name__ == '__main__':
