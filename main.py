@@ -15,7 +15,7 @@ def cmd(command):
 def ping(ip):
     command = f'ping {ip} -n 1'
     result = cmd(command).lower()
-    return 'reply' in result or 'ответ' in result
+    return 'time' in result or 'время' in result
 
 
 def get_router_ip():
@@ -29,7 +29,7 @@ def get_lan_host_list():
 class AddHostDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Добавить хост")
+        self.setWindowTitle("Add host")
 
         self.name_input = QLineEdit()
         self.ip_input = QLineEdit()
@@ -39,7 +39,7 @@ class AddHostDialog(QDialog):
         button_box.rejected.connect(self.reject)
 
         layout = QFormLayout()
-        layout.addRow(QLabel("Имя:"), self.name_input)
+        layout.addRow(QLabel("Name:"), self.name_input)
         layout.addRow(QLabel("IP:"), self.ip_input)
         layout.addRow(button_box)
 
@@ -118,7 +118,7 @@ class TableFromList(QWidget):
             name, ip = dialog.get_host_data()
             if name and ip:
                 host_list.add_host(f"{name} {ip}")
-                # Не обновляем таблицу сразу, пользователь сам нажмет "Обновить"
+                self.refresh_table()
 
     def refresh_table(self):
         self.data = host_list.ping_all()
