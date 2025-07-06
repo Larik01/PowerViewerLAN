@@ -4,6 +4,7 @@ import sys
 from PyQt6.QtWidgets import (QApplication, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget, QPushButton,
                              QHBoxLayout, QDialog, QLineEdit, QLabel, QFormLayout, QDialogButtonBox)
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
 
 
 def cmd(command):
@@ -88,11 +89,9 @@ class TableFromList(QWidget):
 
     def initUI(self):
         self.setWindowTitle('Power Viewer LAN')
-        self.setGeometry(100, 100, 450, 400)
+        self.setGeometry(100, 100, 350, 400)
 
         layout = QVBoxLayout()
-
-        # Создаем горизонтальный layout для кнопок
         button_layout = QHBoxLayout()
 
         self.add_button = QPushButton("Добавить")
@@ -136,6 +135,10 @@ class TableFromList(QWidget):
             for col_idx, item_data in enumerate(row_data):
                 item = QTableWidgetItem(str(item_data))
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if 'Offline' == row_data[-1]:
+                    item.setBackground(QColor(100, 0, 0))
+                else:
+                    item.setBackground(QColor(0, 100, 0))
                 self.tableWidget.setItem(row_idx, col_idx, item)
 
             button = QPushButton("Delete")
@@ -162,7 +165,7 @@ if __name__ == '__main__':
 
     data = host_list.ping_all()
 
-    headers = ["name", "ip", "status", 'button']
+    headers = ["name", "ip", 'button']
 
     ex = TableFromList(data, headers)
     ex.show()
