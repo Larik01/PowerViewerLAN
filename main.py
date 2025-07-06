@@ -1,17 +1,8 @@
 import subprocess
 import sys
 
-from PyQt6.QtWidgets import (QApplication, QTableWidget, QTableWidgetItem,
-                             QVBoxLayout, QWidget, QPushButton, QHBoxLayout)
+from PyQt6.QtWidgets import (QApplication, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget, QPushButton, QHBoxLayout)
 from PyQt6.QtCore import Qt
-
-
-def get_host_list():
-    return [host.split()[0] for host in cmd('arp -a').split('\n')[3:-1] if host.split()[-1] == 'dynamic']
-
-
-def del_host(host_num: int):
-    pass
 
 
 def cmd(command):
@@ -51,11 +42,8 @@ class HostList:
         else:
             return False
 
-    def del_host(self, ip: str):
-        for host in self.hosts:
-            if host[1] == ip:
-                self.hosts.remove(host)
-                break
+    def del_host(self, host_num):
+        del self.hosts[host_num]
         self.save_hosts()
 
     def ping_all(self):
@@ -63,7 +51,7 @@ class HostList:
 
         for host in self.hosts:
             ping_res = ping(host[1])
-            res.append(host + [ping_res])
+            res.append(host + [['Offline'], ['Online']][ping_res])
         return res
 
 
@@ -75,7 +63,7 @@ class TableFromList(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('Table')
+        self.setWindowTitle('Power Viewer LAN')
         self.setGeometry(100, 100, 450, 400)
 
         layout = QVBoxLayout()
@@ -94,14 +82,13 @@ class TableFromList(QWidget):
         self.tableWidget.setHorizontalHeaderLabels(self.headers)
 
         for row_idx, row_data in enumerate(self.data):
-            for col_idx, item_data in enumerate(row_data[:-1]):  # Все кроме последнего элемента (кнопки)
+            for col_idx, item_data in enumerate(row_data):
                 item = QTableWidgetItem(str(item_data))
-                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)  # Делаем ячейки нередактируемыми
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 self.tableWidget.setItem(row_idx, col_idx, item)
 
-            # Добавляем кнопку в последний столбец
             button = QPushButton("Delete")
-            button.clicked.connect(lambda _, r=row_idx: self.delete_row(r))
+            button.clicked.connect(lambda _, r = row_idx: self.delete_row(r))
 
             button_widget = QWidget()
             button_layout = QHBoxLayout(button_widget)
@@ -113,9 +100,9 @@ class TableFromList(QWidget):
             self.tableWidget.setCellWidget(row_idx, num_cols - 1, button_widget)
 
     def delete_row(self, row):
-        # Удаляем строку из таблицы
         self.tableWidget.removeRow(row)
-        # Здесь можно добавить логику удаления из вашего host_list
+        host_list.del_host(row   )
+
 
 
 if __name__ == '__main__':
@@ -123,12 +110,9 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
 
-    data: [[str]] = list()
+    data = host_list.ping_all()
 
-    for i in host_list.ping_all():
-        data.append(i)
-
-    headers: [str] = ["name", "ip", "status", 'button']
+    headers = ["name", "ip", "status", 'button']
 
     ex = TableFromList(data, headers)
     ex.show()

@@ -9,8 +9,8 @@ def cmd(command):
 
 def ping(ip):
     command = f'ping {ip} -n 1'
-    result = cmd(command)
-    return len(result)
+    result = cmd(command).lower()
+    return 'reply' in result or 'ответ' in result
 
 
 def get_router_ip():
@@ -48,13 +48,11 @@ class Host_list:
                 break
         self.save_hosts()
 
-    def ping_all(self):
-        good_res_lenth = ping(get_router_ip())
 
+    def ping_all(self):
         res = []
         for host in self.hosts:
-            ping_res = ping(host[1])
-            res.append(good_res_lenth - 10 < ping_res < good_res_lenth + 10)
+            res.append(ping(host[1]))
         return zip(self.hosts, res)
 
 

@@ -17,4 +17,4 @@ def get_router_ip():
     return cmd('ipconfig').split('\n')[9].split()[-1]
 
 
-print(ping(get_router_ip()))
+print(ping('192.168.1.1'))
