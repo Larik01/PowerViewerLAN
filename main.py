@@ -1,7 +1,8 @@
 import subprocess
 import sys
 
-from PyQt6.QtWidgets import (QApplication, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget, QPushButton, QHBoxLayout)
+from PyQt6.QtWidgets import (QApplication, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget, QPushButton,
+                             QHBoxLayout, QDialog, QLineEdit, QLabel, QFormLayout, QDialogButtonBox)
 from PyQt6.QtCore import Qt
 
 
@@ -25,10 +26,33 @@ def get_lan_host_list():
     return [host.split()[0] for host in cmd('arp -a').split('\n')[3:-1] if host.split()[-1] == 'dynamic']
 
 
+class AddHostDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Добавить хост")
+
+        self.name_input = QLineEdit()
+        self.ip_input = QLineEdit()
+
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+
+        layout = QFormLayout()
+        layout.addRow(QLabel("Имя:"), self.name_input)
+        layout.addRow(QLabel("IP:"), self.ip_input)
+        layout.addRow(button_box)
+
+        self.setLayout(layout)
+
+    def get_host_data(self):
+        return (self.name_input.text(), self.ip_input.text())
+
+
 class HostList:
     def __init__(self, file_name: str) -> None:
         with open(file_name, encoding='cp866') as hosts_file:
-            self.hosts = [host.split() for host in hosts_file.read().split('\n')]
+            self.hosts = [host.split() for host in hosts_file.read().split('\n') if host.strip()]
 
     def save_hosts(self) -> None:
         with open('hosts.txt', 'w', encoding='cp866') as hosts_file:
@@ -67,10 +91,37 @@ class TableFromList(QWidget):
         self.setGeometry(100, 100, 450, 400)
 
         layout = QVBoxLayout()
+
+        # Создаем горизонтальный layout для кнопок
+        button_layout = QHBoxLayout()
+
+        self.add_button = QPushButton("Добавить")
+        self.add_button.clicked.connect(self.show_add_dialog)
+
+        self.refresh_button = QPushButton("Обновить")
+        self.refresh_button.clicked.connect(self.refresh_table)
+
+        button_layout.addWidget(self.add_button)
+        button_layout.addWidget(self.refresh_button)
+
+        layout.addLayout(button_layout)
+
         self.tableWidget = QTableWidget()
         layout.addWidget(self.tableWidget)
         self.setLayout(layout)
 
+        self.populate_table()
+
+    def show_add_dialog(self):
+        dialog = AddHostDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            name, ip = dialog.get_host_data()
+            if name and ip:
+                host_list.add_host(f"{name} {ip}")
+                # Не обновляем таблицу сразу, пользователь сам нажмет "Обновить"
+
+    def refresh_table(self):
+        self.data = host_list.ping_all()
         self.populate_table()
 
     def populate_table(self):
@@ -88,7 +139,7 @@ class TableFromList(QWidget):
                 self.tableWidget.setItem(row_idx, col_idx, item)
 
             button = QPushButton("Delete")
-            button.clicked.connect(lambda _, r = row_idx: self.delete_row(r))
+            button.clicked.connect(lambda _, r=row_idx: self.delete_row(r))
 
             button_widget = QWidget()
             button_layout = QHBoxLayout(button_widget)
@@ -101,8 +152,7 @@ class TableFromList(QWidget):
 
     def delete_row(self, row):
         self.tableWidget.removeRow(row)
-        host_list.del_host(row   )
-
+        host_list.del_host(row)
 
 
 if __name__ == '__main__':

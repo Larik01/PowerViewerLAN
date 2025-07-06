@@ -1,9 +1,10 @@
 import subprocess
+import csv
 
 
 def cmd(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE)
-    result = process.communicate()[0].decode("utf-8")
+    result = process.communicate()[0].decode("cp866")
     return result
 
 
@@ -23,14 +24,12 @@ def get_lan_host_list():
 
 class Host_list:
     def __init__(self, file_name) -> None:
-        with open(file_name, encoding='utf-8') as hosts_file:
-            self.hosts =  [host.split() for host in hosts_file.read().split('\n')]
-
+        with open(file_name, encoding='cp866') as hosts_file:
+            self.hosts = [host.split() for host in hosts_file.read().split('\n')]
 
     def save_hosts(self) -> None:
-        with open('hosts.txt', 'w', encoding='utf-8') as hosts_file:
+        with open('hosts.txt', 'w', encoding='cp866') as hosts_file:
             hosts_file.write('\n'.join([' '.join(host) for host in self.hosts]))
-
 
     def add_host(self, host) -> bool:
         if not host.split() in self.hosts:
@@ -39,7 +38,6 @@ class Host_list:
             return True
         else:
             return False
-
 
     def del_host(self, ip: str):
         for host in self.hosts:
@@ -57,4 +55,16 @@ class Host_list:
 
 
 host_list = Host_list('hosts.txt')
-print(*host_list.ping_all(), sep='\n')
+data: [{str: str}] = list()
+
+for i in host_list.ping_all():
+    dct: {str: str} = {'name': i[0][0], 'ip': i[0][1], 'status': i[1]}
+    data.append(dct)
+
+with open('table.csv', 'w', newline='', encoding="utf8") as f:
+    writer = csv.DictWriter(
+        f, fieldnames=list(data[0].keys()),
+        delimiter=';', quoting=csv.QUOTE_NONNUMERIC)
+    writer.writeheader()
+    for d in data:
+        writer.writerow(d)
